@@ -1,60 +1,70 @@
 import pandas as pd
+import numpy as np
 
 def process_weather_data(input_file_path, output_file_path):
-    # 读取CSV文件，跳过前两行，使用第三行作为列名
+    # Read the csv file
     df = pd.read_csv(input_file_path, sep=';', encoding='utf-8', skiprows=2, header=0)
 
-    # 处理24:00的情况
-    df['Time'] = df['Time'].replace('24:00', '00:00')
-    df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
-    df.loc[df['Time'] == '00:00', 'Date'] += pd.Timedelta(days=1)
+    # Check the name for datetime column
+    date_col = next((col for col in df.columns if 'date' in col.lower()), None)
+    time_col = next((col for col in df.columns if 'time' in col.lower()), None)
 
-    # 合并日期和时间列
-    df['datetime'] = pd.to_datetime(df['Date'].astype(str) + ' ' + df['Time'], format='%Y-%m-%d %H:%M')
+    if date_col and time_col:
+        df[date_col] = df[date_col].str.strip()
+        # Delete empty rows
+        df = df.dropna(subset=[date_col, time_col])
+        # Convert datetime column
+        df[date_col] = pd.to_datetime(df[date_col], format='%d/%m/%Y', errors='coerce')
+        df[time_col] = df[time_col].replace('24:00', '00:00')
+        df.loc[df[time_col] == '00:00', date_col] += pd.Timedelta(days=1)
+        df['datetime'] = pd.to_datetime(df[date_col].astype(str) + ' ' + df[time_col], errors='coerce')
+    elif date_col:
+        df[date_col] = df[date_col].str.strip()
+        df = df.dropna(subset=[date_col])
+        df['datetime'] = pd.to_datetime(df[date_col], errors='coerce')
+    else:
+        df['datetime'] = pd.to_datetime(df.iloc[:, 0], errors='coerce')
 
-    # 设置日期时间为索引
+    # Delete lines with missing datetime
+    df = df.dropna(subset=['datetime'])
+
+    # Set datetime as index
     df.set_index('datetime', inplace=True)
 
-    # 删除原始的日期和时间列
-    df.drop(['Date', 'Time'], axis=1, inplace=True)
+    # Delete original time and date column
+    if date_col:
+        df = df.drop(date_col, axis=1)
+    if time_col:
+        df = df.drop(time_col, axis=1)
 
-    # 计算每天的平均值
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # Calculate daily averages
     daily_avg = df.resample('D').mean()
 
-    # 修改列名为 "1d average"
-    daily_avg.columns = [f"{col} 1d average" for col in daily_avg.columns]
-
-    # 保存处理后的数据
+    # Save processed data as CSV file
     daily_avg.to_csv(output_file_path)
 
-    print(f"处理后的数据已保存到 {output_file_path}")
+    print(f"Processed data saved to {output_file_path}")
 
     return daily_avg
 
-# 处理湿度数据
-input_file_path = 'data/humid_data.csv'
-output_file_path = 'data/processed_humid_data.csv'
-processed_humid_data = process_weather_data(input_file_path, output_file_path)
+def main():
+    input_file_path = 'data/humid_data.csv'
+    output_file_path = 'data/processed_humid_data.csv'
+    processed_humid_data = process_weather_data(input_file_path, output_file_path)
 
-print("\n处理后的数据示例:")
-print(processed_humid_data.head())
+    input_file_path = 'data/temp_data.csv'
+    output_file_path = 'data/processed_temp_data.csv'
+    processed_temp_data = process_weather_data(input_file_path, output_file_path)
 
-print("\n数据类型信息:")
-print(processed_humid_data.dtypes)
+    input_file_path = 'data/wind_data.csv'
+    output_file_path = 'data/processed_wind_data.csv'
+    processed_wind_data = process_weather_data(input_file_path, output_file_path)
 
-print("\n统计信息:")
-print(processed_humid_data.describe())
+    print("All data has been processed.")
 
-print("\n日期范围:")
-print("开始日期:", processed_humid_data.index.min())
-print("结束日期:", processed_humid_data.index.max())
 
-# 处理温度数据
-input_file_path = 'data/temp_data.csv'
-output_file_path = 'data/processed_temp_data.csv'
-processed_temp_data = process_weather_data(input_file_path, output_file_path)
-
-# 处理风速数据
-input_file_path = 'data/wind_data.csv'
-output_file_path = 'data/processed_wind_data.csv'
-processed_wind_data = process_weather_data(input_file_path, output_file_path)
+if __name__ == "__main__":
+    main()
