@@ -217,7 +217,7 @@ def preprocess_features(X_train, X_val, X_test, strategy='mean'):
     
     return X_train_scaled, X_val_scaled, X_test_scaled
 
-def prepare_fire_count_data():
+def prepare_humid_fire_count_data():
     """
     准备湿度和火灾数量数据
     """
