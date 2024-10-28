@@ -8,10 +8,23 @@ from sklearn.preprocessing import StandardScaler
 
 def prepare_humid_fire_data():
     # 1. 读取数据
+    print("\n正在读取数据...")
     humid_data = pd.read_csv('data/processed/processed_humid_data.csv')
     fire_data = pd.read_csv('data/processed/processed_fire_data.csv')
     
-    # 2. 规范化湿度数据的列名
+    print("\n初始火灾数据列名:")
+    print(fire_data.columns.tolist())
+    print("\n初始湿度数据列名:")
+    print(humid_data.columns.tolist())
+    
+    # 2. 创建二元分类标签
+    print("\n创建二元分类标签...")
+    fire_data['fire_binary'] = (fire_data['fire_count'] > 0).astype(int)
+    
+    print("\n添加fire_binary后的火灾数据列名:")
+    print(fire_data.columns.tolist())
+    
+    # 3. 规范化湿度数据的列名
     humid_stations = [
         'LIVERPOOL',
         'WYONG',
@@ -44,40 +57,44 @@ def prepare_humid_fire_data():
         'MORISSET'
     ]
     
-    # 3. 重命名列
+    # 4. 重命名列
     humid_columns = {col: station for col, station in 
                     zip(humid_data.columns[1:], humid_stations)}
     humid_data = humid_data.rename(columns=humid_columns)
     
-    # 4. 打印前几个站点的数据样本
-    print("湿度数据前3个站点的前5行:")
-    print(humid_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
+    print("\n重命名后的湿度数据列名:")
+    print(humid_data.columns.tolist())
     
     # 5. 确保日期格式一致
     humid_data['datetime'] = pd.to_datetime(humid_data['datetime'])
     fire_data['date'] = pd.to_datetime(fire_data['date'])
     
-    # 6. 合并数据前的处理
+    # 6. 打印数据预览
     print("\n火灾数据预览:")
-    print(fire_data.head())
-    
-    # 创建二元分类标签
-    fire_data['fire_binary'] = (fire_data['fire_count'] > 0).astype(int)
-    print("\n二元分类标签预览:")
     print(fire_data[['date', 'fire_count', 'fire_binary']].head())
+    print("\n湿度数据预览:")
+    print(humid_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
     
-    # 6. 合并数据
+    # 7. 合并数据
+    print("\n正在合并数据...")
+    print("合并前的火灾数据列名:", fire_data.columns.tolist())
+    print("合并前的湿度数据列名:", humid_data.columns.tolist())
+    
     merged_data = pd.merge(
         humid_data,
-        fire_data[['date', 'fire_binary']],  # 只选择日期和二元标签
+        fire_data[['date', 'fire_binary']],
         left_on='datetime',
         right_on='date',
         how='inner'
     )
     
-    # 打印合并后的数据分布
-    print("\n火灾发生情况统计:")
-    print(merged_data['fire_binary'].value_counts(normalize=True) * 100)
+    # 8. 打印合并结果
+    print("\n合并后的数据列名:")
+    print(merged_data.columns.tolist())
+    print("\n合并后的数据预览:")
+    preview_columns = ['datetime', 'fire_binary', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']
+    print(merged_data[preview_columns].head())
+    print("\n合并后的数据形状:", merged_data.shape)
     
     return merged_data, humid_stations
 
@@ -197,12 +214,3 @@ def preprocess_features(X_train, X_val, X_test, strategy='mean'):
     print("测试集缺失值:", X_test_scaled.isnull().sum().sum())
     
     return X_train_scaled, X_val_scaled, X_test_scaled
-
-# 运行数据准备
-merged_data, stations = prepare_humid_fire_data()
-(X_train, y_train), (X_val, y_val), (X_test, y_test) = split_dataset(merged_data, stations)
-X_train_processed, X_val_processed, X_test_processed = preprocess_features(X_train, X_val, X_test)
-
-# 打印处理后的数据样例
-print("\n处理后的训练集数据预览:")
-print(X_train_processed.head())
