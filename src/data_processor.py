@@ -1,10 +1,7 @@
 # 添加必要的导入
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
+
 
 def prepare_humid_fire_data():
     # 1. 读取数据

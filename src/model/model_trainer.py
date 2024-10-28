@@ -1,10 +1,12 @@
-import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
+import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve, auc
+import numpy as np
+
 
 def train_and_evaluate_models(X_train, X_val, y_train, y_val):
     """
@@ -32,6 +34,30 @@ def train_and_evaluate_models(X_train, X_val, y_train, y_val):
         'Random Forest': (rf_pred, rf_prob, rf_model)
     }
     
+    # 绘制ROC曲线比较
+    plt.figure(figsize=(10, 8))
+    colors = ['blue', 'red']
+    for (name, (pred, prob, model)), color in zip(models.items(), colors):
+        # 计算ROC曲线
+        fpr, tpr, _ = roc_curve(y_val, prob)
+        roc_auc = auc(fpr, tpr)
+        
+        # 绘制ROC曲线
+        plt.plot(fpr, tpr, color=color, lw=2,
+                label=f'{name} (AUC = {roc_auc:.3f})')
+    
+    # 添加随机猜测的基准线
+    plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
+    
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves Comparison')
+    plt.legend(loc="lower right")
+    plt.grid(True)
+    plt.show()
+    
     # 打印每个模型的评估结果
     for name, (pred, prob, model) in models.items():
         print(f"\n{name} 评估结果:")
@@ -43,22 +69,38 @@ def train_and_evaluate_models(X_train, X_val, y_train, y_val):
         plt.figure(figsize=(8, 6))
         cm = confusion_matrix(y_val, pred)
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-        plt.title(f'{name} 混淆矩阵')
-        plt.ylabel('真实标签')
-        plt.xlabel('预测标签')
+        plt.title(f'{name} Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
         plt.show()
         
-        # 对随机森林显示特征重要性
+        # 显示特征重要性/权重
+        plt.figure(figsize=(10, 6))
         if name == 'Random Forest':
+            # 随机森林特征重要性
             feature_importance = pd.DataFrame({
                 'feature': X_train.columns,
                 'importance': model.feature_importances_
             }).sort_values('importance', ascending=False)
             
-            plt.figure(figsize=(10, 6))
             sns.barplot(data=feature_importance.head(10), x='importance', y='feature')
-            plt.title('Random Forest 特征重要性 (Top 10)')
-            plt.show()
+            plt.title('Random Forest Feature Importance (Top 10)')
+            plt.xlabel('Importance Score')
+            
+        else:
+            # 逻辑回归系数
+            feature_weights = pd.DataFrame({
+                'feature': X_train.columns,
+                'coefficient': np.abs(model.coef_[0])  # 使用绝对值便于比较
+            }).sort_values('coefficient', ascending=False)
+            
+            sns.barplot(data=feature_weights.head(10), x='coefficient', y='feature')
+            plt.title('Logistic Regression Absolute Coefficients (Top 10)')
+            plt.xlabel('|Coefficient|')
+        
+        plt.ylabel('Feature')
+        plt.tight_layout()
+        plt.show()
     
     return models
 
