@@ -1,18 +1,25 @@
 # 添加必要的导入
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.model_selection import train_test_split
-
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 
 def prepare_humid_fire_data():
     # 1. 读取数据
     print("\n正在读取数据...")
     humid_data = pd.read_csv('data/processed/processed_humid_data.csv')
     fire_data = pd.read_csv('data/processed/processed_fire_data.csv')
+    temp_data = pd.read_csv('data/processed/processed_temp_data.csv')
+    wind_data = pd.read_csv('data/processed/processed_wind_data.csv')
     
     print("\n初始火灾数据列名:")
     print(fire_data.columns.tolist())
     print("\n初始湿度数据列名:")
     print(humid_data.columns.tolist())
+    print(temp_data.columns.tolist())
+    print(wind_data.columns.tolist())
     
     # 2. 创建二元分类标签
     print("\n创建二元分类标签...")
@@ -53,17 +60,93 @@ def prepare_humid_fire_data():
         'COFFS HARBOUR',
         'MORISSET'
     ]
+
+    temp_stations = [
+        'LIVERPOOL',
+        'WYONG',
+        'NEWCASTLE',
+        'MAYFIELD',
+        'TAMWORTH',
+        'WOLLONGONG',
+        'ALBURY',
+        'PARRAMATTA NORTH',
+        'MUSWELLBROOK',
+        'SINGLETON',
+        'MAISON DIEU',
+        'CAMBERWELL',
+        'SINGLETON NW',
+        'MOUNT THORLEY',
+        'BULGA',
+        'MUSWELLBROOK NW',
+        'WYBONG',
+        'ABERDEEN',
+        'SINGLETON SOUTH',
+        'JERRYS PLAINS',
+        'WARKWORTH',
+        'MERRIWA',
+        'CAMDEN',
+        'MACQUARIE PARK',
+        'ARMIDALE',
+        'ORANGE',
+        'GOULBURN',
+        'COFFS HARBOUR',
+        'MORISSET'
+    ]
+
+    wind_stations = [
+        'LIVERPOOL',
+        'WYONG',
+        'NEWCASTLE',
+        'MAYFIELD',
+        'TAMWORTH',
+        'WOLLONGONG',
+        'ALBURY',
+        'PARRAMATTA NORTH',
+        'MUSWELLBROOK',
+        'SINGLETON',
+        'MAISON DIEU',
+        'CAMBERWELL',
+        'SINGLETON NW',
+        'MOUNT THORLEY',
+        'BULGA',
+        'MUSWELLBROOK NW',
+        'WYBONG',
+        'ABERDEEN',
+        'SINGLETON SOUTH',
+        'JERRYS PLAINS',
+        'WARKWORTH',
+        'MERRIWA',
+        'CAMDEN',
+        'MACQUARIE PARK',
+        'ARMIDALE',
+        'ORANGE',
+        'GOULBURN',
+        'COFFS HARBOUR',
+        'MORISSET'
+    ]
     
     # 4. 重命名列
     humid_columns = {col: station for col, station in 
                     zip(humid_data.columns[1:], humid_stations)}
     humid_data = humid_data.rename(columns=humid_columns)
+
+    temp_columns = {col: station for col, station in 
+                    zip(temp_data.columns[1:], temp_stations)}
+    temp_data = temp_data.rename(columns=temp_columns)
+
+    wind_columns = {col: station for col, station in 
+                    zip(wind_data.columns[1:], wind_stations)}
+    wind_data = wind_data.rename(columns=wind_columns)
     
     print("\n重命名后的湿度数据列名:")
     print(humid_data.columns.tolist())
+    print(temp_data.columns.tolist())
+    print(wind_data.columns.tolist())
     
     # 5. 确保日期格式一致
     humid_data['datetime'] = pd.to_datetime(humid_data['datetime'])
+    temp_data['datetime'] = pd.to_datetime(temp_data['datetime'])
+    wind_data['datetime'] = pd.to_datetime(wind_data['datetime'])
     fire_data['date'] = pd.to_datetime(fire_data['date'])
     
     # 6. 打印数据预览
@@ -71,14 +154,34 @@ def prepare_humid_fire_data():
     print(fire_data[['date', 'fire_count', 'fire_binary']].head())
     print("\n湿度数据预览:")
     print(humid_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
+    print(temp_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
+    print(wind_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
     
     # 7. 合并数据
     print("\n正在合并数据...")
     print("合并前的火灾数据列名:", fire_data.columns.tolist())
     print("合并前的湿度数据列名:", humid_data.columns.tolist())
+    print("合并前的气温数据列名:", temp_data.columns.tolist())
+    print("合并前的风速数据列名:", wind_data.columns.tolist())
     
     merged_data = pd.merge(
         humid_data,
+        fire_data[['date', 'fire_binary']],
+        left_on='datetime',
+        right_on='date',
+        how='inner'
+    )
+
+    merged1_data = pd.merge(
+        temp_data,
+        fire_data[['date', 'fire_binary']],
+        left_on='datetime',
+        right_on='date',
+        how='inner'
+    )
+
+    merged2_data = pd.merge(
+        wind_data,
         fire_data[['date', 'fire_binary']],
         left_on='datetime',
         right_on='date',
@@ -88,12 +191,200 @@ def prepare_humid_fire_data():
     # 8. 打印合并结果
     print("\n合并后的数据列名:")
     print(merged_data.columns.tolist())
+    print(merged1_data.columns.tolist())
+    print(merged2_data.columns.tolist())
     print("\n合并后的数据预览:")
     preview_columns = ['datetime', 'fire_binary', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']
     print(merged_data[preview_columns].head())
     print("\n合并后的数据形状:", merged_data.shape)
+    print(merged1_data[preview_columns].head())
+    print("\n合并后的数据形状:", merged1_data.shape)
+    print(merged2_data[preview_columns].head())
+    print("\n合并后的数据形状:", merged2_data.shape)
     
-    return merged_data, humid_stations
+    return merged_data, humid_stations, merged1_data, merged2_data, temp_stations, wind_stations
+
+def prepare_temp_fire_data():
+    # 1. 读取数据
+    print("\n正在读取数据...")
+    fire_data = pd.read_csv('data/processed/processed_fire_data.csv')
+    temp_data = pd.read_csv('data/processed/processed_temp_data.csv')
+    
+    print("\n初始火灾数据列名:")
+    print(fire_data.columns.tolist())
+    print(temp_data.columns.tolist())
+    
+    # 2. 创建二元分类标签
+    print("\n创建二元分类标签...")
+    fire_data['fire_binary'] = (fire_data['fire_count'] > 0).astype(int)
+    
+    print("\n添加fire_binary后的火灾数据列名:")
+    print(fire_data.columns.tolist())
+    
+    temp_stations = [
+        'LIVERPOOL',
+        'WYONG',
+        'NEWCASTLE',
+        'MAYFIELD',
+        'TAMWORTH',
+        'WOLLONGONG',
+        'ALBURY',
+        'PARRAMATTA NORTH',
+        'MUSWELLBROOK',
+        'SINGLETON',
+        'MAISON DIEU',
+        'CAMBERWELL',
+        'SINGLETON NW',
+        'MOUNT THORLEY',
+        'BULGA',
+        'MUSWELLBROOK NW',
+        'WYBONG',
+        'ABERDEEN',
+        'SINGLETON SOUTH',
+        'JERRYS PLAINS',
+        'WARKWORTH',
+        'MERRIWA',
+        'CAMDEN',
+        'MACQUARIE PARK',
+        'ARMIDALE',
+        'ORANGE',
+        'GOULBURN',
+        'COFFS HARBOUR',
+        'MORISSET'
+    ]
+
+
+    temp_columns = {col: station for col, station in 
+                    zip(temp_data.columns[1:], temp_stations)}
+    temp_data = temp_data.rename(columns=temp_columns)
+
+    
+    print("\n重命名后的湿度数据列名:")
+    print(temp_data.columns.tolist())
+    
+    temp_data['datetime'] = pd.to_datetime(temp_data['datetime'])
+    fire_data['date'] = pd.to_datetime(fire_data['date'])
+    
+    # 6. 打印数据预览
+    print("\n火灾数据预览:")
+    print(fire_data[['date', 'fire_count', 'fire_binary']].head())
+    print("\n湿度数据预览:")
+    print(temp_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
+    
+    # 7. 合并数据
+    print("\n正在合并数据...")
+    print("合并前的火灾数据列名:", fire_data.columns.tolist())
+    print("合并前的气温数据列名:", temp_data.columns.tolist())
+    
+    merged1_data = pd.merge(
+        temp_data,
+        fire_data[['date', 'fire_binary']],
+        left_on='datetime',
+        right_on='date',
+        how='inner'
+    )
+
+    
+    # 8. 打印合并结果
+    print("\n合并后的数据列名:")
+    print(merged1_data.columns.tolist())
+    print("\n合并后的数据预览:")
+    preview_columns = ['datetime', 'fire_binary', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']
+    print(merged1_data[preview_columns].head())
+    print("\n合并后的数据形状:", merged1_data.shape)
+    
+    return merged1_data,  temp_stations
+
+def prepare_wind_fire_data():
+    # 1. 读取数据
+    print("\n正在读取数据...")
+    fire_data = pd.read_csv('data/processed/processed_fire_data.csv')
+    wind_data = pd.read_csv('data/processed/processed_wind_data.csv')
+    
+    print("\n初始火灾数据列名:")
+    print(fire_data.columns.tolist())
+    print("\n初始湿度数据列名:")
+    print(temp_data.columns.tolist())
+    
+    # 2. 创建二元分类标签
+    print("\n创建二元分类标签...")
+    fire_data['fire_binary'] = (fire_data['fire_count'] > 0).astype(int)
+    
+    print("\n添加fire_binary后的火灾数据列名:")
+    print(fire_data.columns.tolist())
+    
+    wind_stations = [
+        'LIVERPOOL',
+        'WYONG',
+        'NEWCASTLE',
+        'MAYFIELD',
+        'TAMWORTH',
+        'WOLLONGONG',
+        'ALBURY',
+        'PARRAMATTA NORTH',
+        'MUSWELLBROOK',
+        'SINGLETON',
+        'MAISON DIEU',
+        'CAMBERWELL',
+        'SINGLETON NW',
+        'MOUNT THORLEY',
+        'BULGA',
+        'MUSWELLBROOK NW',
+        'WYBONG',
+        'ABERDEEN',
+        'SINGLETON SOUTH',
+        'JERRYS PLAINS',
+        'WARKWORTH',
+        'MERRIWA',
+        'CAMDEN',
+        'MACQUARIE PARK',
+        'ARMIDALE',
+        'ORANGE',
+        'GOULBURN',
+        'COFFS HARBOUR',
+        'MORISSET'
+    ]
+    
+
+    wind_columns = {col: station for col, station in 
+                    zip(wind_data.columns[1:], wind_stations)}
+    wind_data = wind_data.rename(columns=wind_columns)
+    
+    print("\n重命名后的湿度数据列名:")
+    print(wind_data.columns.tolist())
+    
+    wind_data['datetime'] = pd.to_datetime(wind_data['datetime'])
+    fire_data['date'] = pd.to_datetime(fire_data['date'])
+    
+    # 6. 打印数据预览
+    print("\n火灾数据预览:")
+    print(fire_data[['date', 'fire_count', 'fire_binary']].head())
+    print(wind_data[['datetime', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']].head())
+    
+    # 7. 合并数据
+    print("\n正在合并数据...")
+    print("合并前的火灾数据列名:", fire_data.columns.tolist())
+    print("合并前的风速数据列名:", wind_data.columns.tolist())
+
+
+    merged2_data = pd.merge(
+        wind_data,
+        fire_data[['date', 'fire_binary']],
+        left_on='datetime',
+        right_on='date',
+        how='inner'
+    )
+    
+    # 8. 打印合并结果
+    print("\n合并后的数据列名:")
+    print(merged2_data.columns.tolist())
+    print("\n合并后的数据预览:")
+    preview_columns = ['datetime', 'fire_binary', 'LIVERPOOL', 'WYONG', 'NEWCASTLE']
+    print(merged2_data[preview_columns].head())
+    print("\n合并后的数据形状:", merged2_data.shape)
+    
+    return merged2_data, wind_stations
+
 
 def split_dataset(merged_data, humid_stations, test_size=0.2, val_size=0.2, random_state=42):
     """
@@ -132,24 +423,136 @@ def split_dataset(merged_data, humid_stations, test_size=0.2, val_size=0.2, rand
     feature_columns = humid_stations
     target_column = 'fire_binary'
     
-    X_train = train_data[feature_columns]
-    y_train = train_data[target_column]
+    X_train_humid = train_data[feature_columns]
+    y_train_humid = train_data[target_column]
     
-    X_val = val_data[feature_columns]
-    y_val = val_data[target_column]
+    X_val_humid = val_data[feature_columns]
+    y_val_humid = val_data[target_column]
     
-    X_test = test_data[feature_columns]
-    y_test = test_data[target_column]
+    X_test_humid = test_data[feature_columns]
+    y_test_humid = test_data[target_column]
     
     # 打印类别分布
     print("\n训练集类别分布:")
-    print(y_train.value_counts(normalize=True) * 100)
+    print(y_train_humid.value_counts(normalize=True) * 100)
     print("\n验证集类别分布:")
-    print(y_val.value_counts(normalize=True) * 100)
+    print(y_val_humid.value_counts(normalize=True) * 100)
     print("\n测试集类别分布:")
-    print(y_test.value_counts(normalize=True) * 100)
+    print(y_test_humid.value_counts(normalize=True) * 100)
     
-    return (X_train, y_train), (X_val, y_val), (X_test, y_test)
+    return (X_train_humid, y_train_humid), (X_val_humid, y_val_humid), (X_test_humid, y_test_humid)
+
+def split_dataset1(merged1_data, temp_stations, test_size=0.2, val_size=0.2, random_state=42):
+    """
+    将数据集分割为训练集、验证集和测试集
+    
+    参数:
+        merged_data: 合并后的数据集
+        humid_stations: 湿度站点列表
+        test_size: 测试集比例
+        val_size: 验证集比例
+        random_state: 随机种子
+    """
+    # 首先分出测试集
+    train_val_data, test_data = train_test_split(
+        merged1_data, 
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=True
+    )
+    
+    # 从剩余数据中分出验证集
+    val_ratio = val_size / (1 - test_size)
+    train_data, val_data = train_test_split(
+        train_val_data,
+        test_size=val_ratio,
+        random_state=random_state,
+        shuffle=True
+    )
+    
+    print(f"\n数据集划分情况:")
+    print(f"训练集大小: {len(train_data)} ({len(train_data)/len(merged1_data)*100:.2f}%)")
+    print(f"验证集大小: {len(val_data)} ({len(val_data)/len(merged1_data)*100:.2f}%)")
+    print(f"测试集大小: {len(test_data)} ({len(test_data)/len(merged1_data)*100:.2f}%)")
+    
+    # 准备特征(X)和目标变量(y)
+    feature_columns = temp_stations
+    target_column = 'fire_binary'
+    
+    X_train_temp = train_data[feature_columns]
+    y_train_temp = train_data[target_column]
+    
+    X_val_temp = val_data[feature_columns]
+    y_val_temp = val_data[target_column]
+    
+    X_test_temp = test_data[feature_columns]
+    y_test_temp = test_data[target_column]
+    
+    # 打印类别分布
+    print("\n训练集类别分布:")
+    print(y_train_temp.value_counts(normalize=True) * 100)
+    print("\n验证集类别分布:")
+    print(y_val_temp.value_counts(normalize=True) * 100)
+    print("\n测试集类别分布:")
+    print(y_test_temp.value_counts(normalize=True) * 100)
+    
+    return (X_train_temp, y_train_temp), (X_val_temp, y_val_temp), (X_test_temp, y_test_temp)
+
+def split_dataset(merged2_data, wind_stations, test_size=0.2, val_size=0.2, random_state=42):
+    """
+    将数据集分割为训练集、验证集和测试集
+    
+    参数:
+        merged_data: 合并后的数据集
+        humid_stations: 湿度站点列表
+        test_size: 测试集比例
+        val_size: 验证集比例
+        random_state: 随机种子
+    """
+    # 首先分出测试集
+    train_val_data, test_data = train_test_split(
+        merged2_data,
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=True
+    )
+    
+    # 从剩余数据中分出验证集
+    val_ratio = val_size / (1 - test_size)
+    train_data, val_data = train_test_split(
+        train_val_data,
+        test_size=val_ratio,
+        random_state=random_state,
+        shuffle=True
+    )
+    
+    print(f"\n数据集划分情况:")
+    print(f"训练集大小: {len(train_data)} ({len(train_data)/len(merged2_data)*100:.2f}%)")
+    print(f"验证集大小: {len(val_data)} ({len(val_data)/len(merged2_data)*100:.2f}%)")
+    print(f"测试集大小: {len(test_data)} ({len(test_data)/len(merged2_data)*100:.2f}%)")
+    
+    # 准备特征(X)和目标变量(y)
+    feature_columns = wind_stations
+    target_column = 'fire_binary'
+    
+    X_train_wind = train_data[feature_columns]
+    y_train_wind  = train_data[target_column]
+    
+    X_val_wind  = val_data[feature_columns]
+    y_val_wind  = val_data[target_column]
+    
+    X_test_wind  = test_data[feature_columns]
+    y_test_wind  = test_data[target_column]
+    
+    # 打印类别分布
+    print("\n训练集类别分布:")
+    print(y_train_wind .value_counts(normalize=True) * 100)
+    print("\n验证集类别分布:")
+    print(y_val_wind .value_counts(normalize=True) * 100)
+    print("\n测试集类别分布:")
+    print(y_test_wind .value_counts(normalize=True) * 100)
+    
+    return (X_train_wind , y_train_wind ), (X_val_wind , y_val_wind ), (X_test_wind , y_test_wind )
 
 def preprocess_features(X_train, X_val, X_test, strategy='mean'):
     """
