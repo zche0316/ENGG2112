@@ -44,8 +44,8 @@ def process_fire_data(file_path):
     return result
 
 def main():
-    input_file_path = 'data/fire_data.csv'
-    output_file_path = 'data/processed_fire_data.csv'
+    input_file_path = 'data/raw/fire_data.csv'
+    output_file_path = 'data/processed/processed_fire_data.csv'
     
     processed_data = process_fire_data(input_file_path)
     

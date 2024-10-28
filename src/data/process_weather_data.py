@@ -51,16 +51,16 @@ def process_weather_data(input_file_path, output_file_path):
     return daily_avg
 
 def main():
-    input_file_path = 'data/humid_data.csv'
-    output_file_path = 'data/processed_humid_data.csv'
+    input_file_path = 'data/raw/humid_data.csv'
+    output_file_path = 'data/processed/processed_humid_data.csv'
     processed_humid_data = process_weather_data(input_file_path, output_file_path)
 
-    input_file_path = 'data/temp_data.csv'
-    output_file_path = 'data/processed_temp_data.csv'
+    input_file_path = 'data/raw/temp_data.csv'
+    output_file_path = 'data/processed/processed_temp_data.csv'
     processed_temp_data = process_weather_data(input_file_path, output_file_path)
 
-    input_file_path = 'data/wind_data.csv'
-    output_file_path = 'data/processed_wind_data.csv'
+    input_file_path = 'data/raw/wind_data.csv'
+    output_file_path = 'data/processed/processed_wind_data.csv'
     processed_wind_data = process_weather_data(input_file_path, output_file_path)
 
     print("All data has been processed.")
