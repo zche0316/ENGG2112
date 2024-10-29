@@ -5,7 +5,6 @@ def process_weather_data(input_file_path, output_file_path):
     # Read the csv file
     df = pd.read_csv(input_file_path, sep=';', encoding='utf-8', skiprows=2, header=0)
 
-    # Check the name for datetime column
     date_col = next((col for col in df.columns if 'date' in col.lower()), None)
     time_col = next((col for col in df.columns if 'time' in col.lower()), None)
 
@@ -13,7 +12,6 @@ def process_weather_data(input_file_path, output_file_path):
         df[date_col] = df[date_col].str.strip()
         # Delete empty rows
         df = df.dropna(subset=[date_col, time_col])
-        # Convert datetime column
         df[date_col] = pd.to_datetime(df[date_col], format='%d/%m/%Y', errors='coerce')
         df[time_col] = df[time_col].replace('24:00', '00:00')
         df.loc[df[time_col] == '00:00', date_col] += pd.Timedelta(days=1)
@@ -28,10 +26,8 @@ def process_weather_data(input_file_path, output_file_path):
     # Delete lines with missing datetime
     df = df.dropna(subset=['datetime'])
 
-    # Set datetime as index
     df.set_index('datetime', inplace=True)
 
-    # Delete original time and date column
     if date_col:
         df = df.drop(date_col, axis=1)
     if time_col:
@@ -40,7 +36,6 @@ def process_weather_data(input_file_path, output_file_path):
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Calculate daily averages
     daily_avg = df.resample('D').mean()
 
     # Save processed data as CSV file
