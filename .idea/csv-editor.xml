@@ -38,7 +38,21 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\data\raw\humid_data.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\data\raw\temp_data.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\raw\wind_data.csv">
           <value>
             <Attribute>
               <option name="separator" value=";" />
