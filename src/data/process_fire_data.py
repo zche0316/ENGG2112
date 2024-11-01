@@ -1,6 +1,5 @@
 import pandas as pd
 import csv
-from datetime import datetime, timedelta
 
 def process_fire_data(file_path):
     with open(file_path, 'r', encoding='utf-8-sig') as f:
