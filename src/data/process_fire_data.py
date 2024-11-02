@@ -5,8 +5,7 @@ def process_fire_data(file_path):
     with open(file_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.reader(f, delimiter=';')
         data = list(reader)
-    
-    # Create DataFrame
+
     columns = ['fire_id', 'fire_name', 'ignition_date', 'extinguish_date', 'ignition_cause', 'area_ha', 'unused1', 'unused2']
     df = pd.DataFrame(data[1:], columns=columns) 
 
@@ -15,7 +14,6 @@ def process_fire_data(file_path):
 
     df['area_ha'] = pd.to_numeric(df['area_ha'], errors='coerce')
 
-    # Data cleaning by removing rows containing NaN
     df = df.dropna(subset=['ignition_date', 'extinguish_date', 'area_ha'])
 
     date_range = pd.date_range(start=df['ignition_date'].min(), end=df['extinguish_date'].max()).date
@@ -40,8 +38,7 @@ def main():
     output_file_path = 'data/processed/processed_fire_data.csv'
     
     processed_data = process_fire_data(input_file_path)
-    
-    # Save processed data as CSV file
+
     processed_data.to_csv(output_file_path, index=False)
     print(f"Processed data has been saved to {output_file_path}")
 

@@ -25,8 +25,7 @@ def split_dataset(merged_data, feature_columns, target_column, test_size=0.2, va
     print(f"Training set size: {len(train_data)} ({len(train_data)/len(merged_data)*100:.2f}%)")
     print(f"Validating set size: {len(val_data)} ({len(val_data)/len(merged_data)*100:.2f}%)")
     print(f"Testing set size: {len(test_data)} ({len(test_data)/len(merged_data)*100:.2f}%)")
-    
-    # Prepare features(X) and target variable(y)
+
     X_train = train_data[feature_columns]
     y_train = train_data[target_column]
     
@@ -47,13 +46,9 @@ def split_dataset(merged_data, feature_columns, target_column, test_size=0.2, va
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 
 def preprocess_features(X_train, X_val, X_test, strategy='mean'):
-    """
-    Process missing values in the feature data
-    """
     from sklearn.impute import SimpleImputer
     from sklearn.preprocessing import StandardScaler
-    
-    # Process with missing values
+
     imputer = SimpleImputer(strategy=strategy)
     X_train_imputed = pd.DataFrame(
         imputer.fit_transform(X_train),
